@@ -1,44 +1,39 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Ruta raíz
+// --- Ruta raíz ---
 app.get("/", (req, res) => {
-  res.status(200).send("Backend funcionando ✔️");
+  res.send("Backend funcionando ✔️");
 });
 
-// Conexión MongoDB
-mongoose
-  .connect(process.env.MONGO_URL)
-  .then(() => console.log("Conectado a MongoDB Atlas"))
-  .catch((err) => console.error("Error MongoDB:", err));
+// --- Conexión a MongoDB ---
+// ⚠️ ESTA ES LA URL CORRECTA, PARA EL USUARIO NUEVO "flutterUser"
+mongoose.connect("mongodb+srv://flutterUser:Exproy2025@cluster0.ruxthth.mongodb.net/exproyDB?retryWrites=true&w=majority&appName=Cluster0")
+  .then(() => console.log("MongoDB conectado ✔️"))
+  .catch(err => console.error("Error Mongo:", err));
 
 // Modelo
 const User = require("./models/User");
 
-// ==========================
-//     REGISTRO
-// ==========================
+// --- Registro ---
 app.post("/register", async (req, res) => {
   const { usuario, password } = req.body;
 
   try {
-    const exists = await User.findOne({ usuario });
-    if (exists) return res.json({ ok: false, msg: "Usuario ya existe" });
-
-    const esProfesor = usuario.includes("@");
+    const existe = await User.findOne({ usuario });
+    if (existe) return res.json({ ok: false, msg: "Usuario ya existe" });
 
     const nuevo = new User({
       usuario,
       password,
-      rol: esProfesor ? "profesor" : "alumno",
-      correo: esProfesor ? usuario : null,
-      matricula: esProfesor ? null : usuario
+      rol: usuario.includes("@") ? "profesor" : "alumno",
+      correo: usuario.includes("@") ? usuario : null,
+      matricula: usuario.includes("@") ? null : usuario
     });
 
     await nuevo.save();
@@ -50,9 +45,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ==========================
-//        LOGIN
-// ==========================
+// --- Login ---
 app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -62,7 +55,6 @@ app.post("/login", async (req, res) => {
       : await User.findOne({ matricula: usuario });
 
     if (!user) return res.json({ ok: false, msg: "Usuario no existe" });
-
     if (user.password !== password)
       return res.json({ ok: false, msg: "Contraseña incorrecta" });
 
@@ -74,17 +66,8 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ==========================
-//    DESACTIVAR 2FA TEMPORAL
-// ==========================
-// 🚫 Estas rutas están rompiendo Railway
-// app.use("/sendCode", require("./routes/sendCode"));
-// app.use("/verifyCode", require("./routes/verifyCode"));
-// app.use("/resetPassword", require("./routes/resetPassword"));
-
-// PUERTO
+// --- Puerto Railway ---
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, "0.0.0.0", () => {
-  console.log("Servidor corriendo en puerto:", PORT);
-});
+app.listen(PORT, "0.0.0.0", () =>
+  console.log("Servidor corriendo en puerto:", PORT)
+);
