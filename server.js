@@ -7,16 +7,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Ruta raíz para evitar error de Railway
+// Ruta raíz para verificar que el backend está vivo
 app.get("/", (req, res) => {
-  res.send("Backend funcionando ✔️");
+  res.status(200).send("Backend funcionando ✔️");
 });
 
-// Conectar MongoDB
+// Conexión MongoDB Atlas
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("Conectado a MongoDB Atlas"))
-  .catch((err) => console.log("Error Mongo:", err));
+  .catch((err) => console.error("Error MongoDB:", err));
 
 // Modelo
 const User = require("./models/User");
@@ -42,10 +42,10 @@ app.post("/register", async (req, res) => {
     });
 
     await nuevo.save();
-
     res.json({ ok: true, rol: nuevo.rol });
+
   } catch (err) {
-    console.log(err);
+    console.error(err);
     res.json({ ok: false, msg: "Error servidor" });
   }
 });
@@ -57,9 +57,7 @@ app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
 
   try {
-    const isEmail = usuario.includes("@");
-
-    const user = isEmail
+    const user = usuario.includes("@")
       ? await User.findOne({ correo: usuario })
       : await User.findOne({ matricula: usuario });
 
@@ -68,8 +66,10 @@ app.post("/login", async (req, res) => {
     if (user.password !== password)
       return res.json({ ok: false, msg: "Contraseña incorrecta" });
 
-    return res.json({ ok: true, rol: user.rol, usuario: user.usuario });
+    res.json({ ok: true, rol: user.rol });
+
   } catch (err) {
+    console.error(err);
     res.json({ ok: false, msg: "Error servidor" });
   }
 });
@@ -83,4 +83,7 @@ app.use("/resetPassword", require("./routes/resetPassword"));
 
 // PUERTO PARA RAILWAY
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Servidor corriendo en puerto:", PORT));
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Servidor corriendo en puerto:", PORT);
+});
