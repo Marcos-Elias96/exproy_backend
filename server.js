@@ -11,7 +11,7 @@ app.get("/", (req, res) => {
   res.send("Backend funcionando ✔️");
 });
 
-// --- Conexión a MongoDB ---
+// --- Conexión MongoDB ---
 mongoose.connect("mongodb+srv://flutterUser:Exproy2025@cluster0.ruxthth.mongodb.net/exproyDB?retryWrites=true&w=majority&appName=Cluster0")
   .then(() => console.log("MongoDB conectado ✔️"))
   .catch(err => console.error("Error Mongo:", err));
@@ -24,11 +24,8 @@ app.post("/register", async (req, res) => {
   const { usuario, password } = req.body;
 
   try {
-    // Detectar si es profesor o alumno
-    const esCorreo = usuario.includes("@");
-
-    // Buscar si existe por correo o matricula
-    const existe = esCorreo
+    // Verificar si ya existe por correo o matrícula
+    const existe = usuario.includes("@")
       ? await User.findOne({ correo: usuario })
       : await User.findOne({ matricula: usuario });
 
@@ -37,9 +34,9 @@ app.post("/register", async (req, res) => {
     const nuevo = new User({
       usuario,
       password,
-      rol: esCorreo ? "profesor" : "alumno",
-      correo: esCorreo ? usuario : null,
-      matricula: esCorreo ? null : usuario
+      rol: usuario.includes("@") ? "profesor" : "alumno",
+      correo: usuario.includes("@") ? usuario : null,
+      matricula: usuario.includes("@") ? null : usuario
     });
 
     await nuevo.save();
@@ -56,9 +53,8 @@ app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
 
   try {
-    const esCorreo = usuario.includes("@");
-
-    const user = esCorreo
+    // Buscar usuario dependiendo si es matrícula o correo
+    const user = usuario.includes("@")
       ? await User.findOne({ correo: usuario })
       : await User.findOne({ matricula: usuario });
 
