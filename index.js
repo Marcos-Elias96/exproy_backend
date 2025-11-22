@@ -18,13 +18,13 @@ mongoose.connect("mongodb+srv://flutterUser:Exproy2025@cluster0.ruxthth.mongodb.
 
 const User = require("./models/User");
 
+
 // ------------------
-//  REGISTRO
+//  REGISTRO (CORREGIDO)
 // ------------------
 app.post("/register", async (req, res) => {
   const { usuario, password } = req.body || {};
 
-  // Validación obligatoria para evitar crash en Railway
   if (!usuario || !password) {
     return res.status(400).json({
       ok: false,
@@ -33,41 +33,44 @@ app.post("/register", async (req, res) => {
   }
 
   try {
-    let correo = null;
-    let matricula = null;
+    let query = {};
 
-    // Diferenciar por tipo
-    if (usuario.includes("@")) correo = usuario;
-    else matricula = usuario;
+    // Detectar si es correo o matrícula
+    if (usuario.includes("@")) {
+      query = { correo: usuario };
+    } else {
+      query = { matricula: usuario };
+    }
 
-    // Buscar sin undefined
-    const existe = await User.findOne({
-      $or: [
-        correo ? { correo } : {},
-        matricula ? { matricula } : {}
-      ]
-    });
+    // Buscar EXACTAMENTE por ese campo
+    const existe = await User.findOne(query);
 
     if (existe) {
       return res.status(409).json({ ok: false, msg: "Usuario ya existe" });
     }
 
+    // Crear usuario nuevo
     const nuevo = new User({
-      correo,
-      matricula,
+      correo: usuario.includes("@") ? usuario : null,
+      matricula: usuario.includes("@") ? null : usuario,
       password,
-      rol: correo ? "profesor" : "alumno"
+      rol: usuario.includes("@") ? "profesor" : "alumno",
     });
 
     await nuevo.save();
 
-    return res.json({ ok: true, rol: nuevo.rol });
+    return res.json({
+      ok: true,
+      msg: "Usuario registrado correctamente",
+      rol: nuevo.rol
+    });
 
   } catch (err) {
     console.error("🔥 ERROR REGISTER:", err);
     return res.status(500).json({ ok: false, msg: "Error servidor" });
   }
 });
+
 
 // ------------------
 //  LOGIN
