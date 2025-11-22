@@ -20,41 +20,41 @@ const User = require("./models/User");
 
 
 // ------------------
-//  REGISTRO (CORREGIDO)
+//  REGISTRO (CORREGIDO DEFINITIVO)
 // ------------------
 app.post("/register", async (req, res) => {
-  const { usuario, password } = req.body || {};
+  const { usuario, correo, matricula, password } = req.body || {};
 
-  if (!usuario || !password) {
+  // Normalizar (acepta cualquiera)
+  const finalUsuario = usuario || correo || matricula;
+
+  if (!finalUsuario || !password) {
     return res.status(400).json({
       ok: false,
-      msg: "Faltan datos: usuario y password son requeridos"
+      msg: "Faltan datos: usuario / correo / matricula y password"
     });
   }
 
   try {
     let query = {};
 
-    // Detectar si es correo o matrícula
-    if (usuario.includes("@")) {
-      query = { correo: usuario };
+    if (finalUsuario.includes("@")) {
+      query = { correo: finalUsuario };
     } else {
-      query = { matricula: usuario };
+      query = { matricula: finalUsuario };
     }
 
-    // Buscar EXACTAMENTE por ese campo
     const existe = await User.findOne(query);
 
     if (existe) {
       return res.status(409).json({ ok: false, msg: "Usuario ya existe" });
     }
 
-    // Crear usuario nuevo
     const nuevo = new User({
-      correo: usuario.includes("@") ? usuario : null,
-      matricula: usuario.includes("@") ? null : usuario,
+      correo: finalUsuario.includes("@") ? finalUsuario : null,
+      matricula: finalUsuario.includes("@") ? null : finalUsuario,
       password,
-      rol: usuario.includes("@") ? "profesor" : "alumno",
+      rol: finalUsuario.includes("@") ? "profesor" : "alumno",
     });
 
     await nuevo.save();
@@ -79,10 +79,7 @@ app.post("/login", async (req, res) => {
   const { usuario, password } = req.body || {};
 
   if (!usuario || !password) {
-    return res.status(400).json({
-      ok: false,
-      msg: "Faltan datos"
-    });
+    return res.status(400).json({ ok: false, msg: "Faltan datos" });
   }
 
   try {
@@ -107,6 +104,7 @@ app.post("/login", async (req, res) => {
     return res.status(500).json({ ok: false, msg: "Error servidor" });
   }
 });
+
 
 // Puerto Railway
 const PORT = process.env.PORT || 3000;
