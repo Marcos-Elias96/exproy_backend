@@ -7,12 +7,12 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Ruta raíz para verificar que el backend está vivo
+// Ruta raíz
 app.get("/", (req, res) => {
   res.status(200).send("Backend funcionando ✔️");
 });
 
-// Conexión MongoDB Atlas
+// Conexión MongoDB
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("Conectado a MongoDB Atlas"))
@@ -75,13 +75,14 @@ app.post("/login", async (req, res) => {
 });
 
 // ==========================
-//         RUTAS 2FA
+//    DESACTIVAR 2FA TEMPORAL
 // ==========================
-app.use("/sendCode", require("./routes/sendCode"));
-app.use("/verifyCode", require("./routes/verifyCode"));
-app.use("/resetPassword", require("./routes/resetPassword"));
+// 🚫 Estas rutas están rompiendo Railway
+// app.use("/sendCode", require("./routes/sendCode"));
+// app.use("/verifyCode", require("./routes/verifyCode"));
+// app.use("/resetPassword", require("./routes/resetPassword"));
 
-// PUERTO PARA RAILWAY
+// PUERTO
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, "0.0.0.0", () => {
