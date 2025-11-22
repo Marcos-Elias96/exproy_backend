@@ -1,7 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();  // <--- IMPORTANTE para Railway
+require("dotenv").config();
 
 const app = express();
 app.use(express.json());
@@ -16,7 +16,9 @@ mongoose
 // Modelo
 const User = require("./models/User");
 
-// RUTA: Registrar usuario
+// ==========================
+//     REGISTRO
+// ==========================
 app.post("/register", async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -24,41 +26,56 @@ app.post("/register", async (req, res) => {
     const exists = await User.findOne({ usuario });
     if (exists) return res.json({ ok: false, msg: "Usuario ya existe" });
 
-    const rol = usuario.includes("@") ? "profesor" : "alumno";
+    const esProfesor = usuario.includes("@");
 
-    await new User({ usuario, password, rol }).save();
+    const nuevo = new User({
+      usuario,
+      password,
+      rol: esProfesor ? "profesor" : "alumno",
+      correo: esProfesor ? usuario : null,
+      matricula: esProfesor ? null : usuario
+    });
 
-    res.json({ ok: true, rol });
+    await nuevo.save();
+
+    res.json({ ok: true, rol: nuevo.rol });
   } catch (err) {
+    console.log(err);
     res.json({ ok: false, msg: "Error servidor" });
   }
 });
 
-// RUTA: Login
+// ==========================
+//        LOGIN
+// ==========================
 app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
 
   try {
-    const user = await User.findOne({ usuario });
+    const isEmail = usuario.includes("@");
+
+    const user = isEmail
+      ? await User.findOne({ correo: usuario })
+      : await User.findOne({ matricula: usuario });
 
     if (!user) return res.json({ ok: false, msg: "Usuario no existe" });
-    if (user.password !== password)
-      return res.json({ ok: false, msg: "Contraseña incorrecta" });
 
-    res.json({ ok: true, rol: user.rol });
+    if (user.password !== password)
+      return res.json({ ok: false, msg: "Contrase�a incorrecta" });
+
+    return res.json({ ok: true, rol: user.rol, usuario: user.usuario });
   } catch (err) {
     res.json({ ok: false, msg: "Error servidor" });
   }
 });
 
-// Rutas 2FA
+// ==========================
+//         RUTAS 2FA
+// ==========================
 app.use("/sendCode", require("./routes/sendCode"));
 app.use("/verifyCode", require("./routes/verifyCode"));
 app.use("/resetPassword", require("./routes/resetPassword"));
 
-// PUERTO DINÁMICO PARA RAILWAY ⚠️
+// PUERTO PARA RAILWAY
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("Servidor corriendo en puerto:", PORT);
-});
+app.listen(PORT, () => console.log("Servidor corriendo en puerto:", PORT));

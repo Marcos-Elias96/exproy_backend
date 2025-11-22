@@ -5,23 +5,22 @@ const User = require("../models/User");
 router.post("/", async (req, res) => {
   const { usuario, newPassword } = req.body;
 
-  if (!usuario || !newPassword) {
-    return res.json({ ok: false, msg: "Faltan datos" });
-  }
+  const isEmail = usuario.includes("@");
 
   try {
-    const user = await User.findOne({ usuario });
+    const user = isEmail
+      ? await User.findOne({ correo: usuario })
+      : await User.findOne({ matricula: usuario });
 
-    if (!user) {
+    if (!user)
       return res.json({ ok: false, msg: "Usuario no encontrado" });
-    }
 
     user.password = newPassword;
     await user.save();
 
-    return res.json({ ok: true, msg: "ContraseÃ±a actualizada" });
+    res.json({ ok: true, msg: "Contraseña actualizada" });
   } catch (err) {
-    return res.json({ ok: false, msg: "Error al actualizar", error: err });
+    res.json({ ok: false, msg: "Error al actualizar" });
   }
 });
 
