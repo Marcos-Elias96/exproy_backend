@@ -6,19 +6,19 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ruta raíz
+// Ruta raíz
 app.get("/", (req, res) => {
   res.send("Backend funcionando ✔️");
 });
 
-// MongoDB
+// Conexión a MongoDB
 mongoose.connect("mongodb+srv://flutterUser:Exproy2025@cluster0.ruxthth.mongodb.net/exproyDB?retryWrites=true&w=majority&appName=Cluster0")
   .then(() => console.log("MongoDB conectado ✔️"))
   .catch(err => console.error("Error Mongo:", err));
 
 const User = require("./models/User");
 
-// --- Registro ---
+// Registro
 app.post("/register", async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -29,7 +29,7 @@ app.post("/register", async (req, res) => {
     if (usuario.includes("@")) correo = usuario;
     else matricula = usuario;
 
-    // verificar existencia
+    // verificar existencia real
     const existe = await User.findOne({
       $or: [
         { correo },
@@ -47,7 +47,6 @@ app.post("/register", async (req, res) => {
     });
 
     await nuevo.save();
-
     res.json({ ok: true, rol: nuevo.rol });
 
   } catch (err) {
@@ -56,7 +55,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// --- Login ---
+// Login
 app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -68,7 +67,6 @@ app.post("/login", async (req, res) => {
     const user = await User.findOne(query);
 
     if (!user) return res.json({ ok: false, msg: "Usuario no existe" });
-
     if (user.password !== password)
       return res.json({ ok: false, msg: "Contraseña incorrecta" });
 
