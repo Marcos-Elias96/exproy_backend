@@ -7,6 +7,11 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// 🚀 RUTA RAÍZ PARA QUE RAILWAY NO MARQUE 502
+app.get("/", (req, res) => {
+  res.send("Backend funcionando ✔️");
+});
+
 // Conectar MongoDB
 mongoose
   .connect(process.env.MONGO_URL)
@@ -61,7 +66,7 @@ app.post("/login", async (req, res) => {
     if (!user) return res.json({ ok: false, msg: "Usuario no existe" });
 
     if (user.password !== password)
-      return res.json({ ok: false, msg: "Contrase�a incorrecta" });
+      return res.json({ ok: false, msg: "Contraseña incorrecta" });
 
     return res.json({ ok: true, rol: user.rol, usuario: user.usuario });
   } catch (err) {
@@ -77,5 +82,5 @@ app.use("/verifyCode", require("./routes/verifyCode"));
 app.use("/resetPassword", require("./routes/resetPassword"));
 
 // PUERTO PARA RAILWAY
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log("Servidor corriendo en puerto:", PORT));
