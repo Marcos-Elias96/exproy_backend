@@ -7,12 +7,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// 🚀 RUTA RAÍZ PARA QUE RAILWAY NO MARQUE 502
+// =====================================
+//           ROOT TEST ROUTE
+// =====================================
 app.get("/", (req, res) => {
   res.send("Backend funcionando ✔️");
 });
 
-// Conectar MongoDB
+// =====================================
+//        CONEXIÓN A MONGO ATLAS
+// =====================================
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("Conectado a MongoDB Atlas"))
@@ -21,9 +25,9 @@ mongoose
 // Modelo
 const User = require("./models/User");
 
-// ==========================
-//     REGISTRO
-// ==========================
+// =====================================
+//              REGISTRO
+// =====================================
 app.post("/register", async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -43,16 +47,17 @@ app.post("/register", async (req, res) => {
 
     await nuevo.save();
 
-    res.json({ ok: true, rol: nuevo.rol });
+    return res.json({ ok: true, rol: nuevo.rol });
+
   } catch (err) {
-    console.log(err);
-    res.json({ ok: false, msg: "Error servidor" });
+    console.log("Error en /register:", err);
+    return res.json({ ok: false, msg: "Error servidor" });
   }
 });
 
-// ==========================
-//        LOGIN
-// ==========================
+// =====================================
+//                LOGIN
+// =====================================
 app.post("/login", async (req, res) => {
   const { usuario, password } = req.body;
 
@@ -68,19 +73,27 @@ app.post("/login", async (req, res) => {
     if (user.password !== password)
       return res.json({ ok: false, msg: "Contraseña incorrecta" });
 
-    return res.json({ ok: true, rol: user.rol, usuario: user.usuario });
+    return res.json({
+      ok: true,
+      rol: user.rol,
+      usuario: user.usuario
+    });
+
   } catch (err) {
-    res.json({ ok: false, msg: "Error servidor" });
+    console.log("Error en /login:", err);
+    return res.json({ ok: false, msg: "Error servidor" });
   }
 });
 
-// ==========================
-//         RUTAS 2FA
-// ==========================
+// =====================================
+//             RUTAS 2FA
+// =====================================
 app.use("/sendCode", require("./routes/sendCode"));
 app.use("/verifyCode", require("./routes/verifyCode"));
 app.use("/resetPassword", require("./routes/resetPassword"));
 
-// PUERTO PARA RAILWAY
-const PORT = process.env.PORT || 8080;
+// =====================================
+//            PUERTO RAILWAY
+// =====================================
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log("Servidor corriendo en puerto:", PORT));
