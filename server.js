@@ -18,26 +18,39 @@ mongoose.connect("mongodb+srv://flutterUser:Exproy2025@cluster0.ruxthth.mongodb.
 
 const User = require("./models/User");
 
-// Registro
+// ------------------
+//  REGISTRO
+// ------------------
 app.post("/register", async (req, res) => {
-  const { usuario, password } = req.body;
+  const { usuario, password } = req.body || {};
+
+  // Validación obligatoria para evitar crash en Railway
+  if (!usuario || !password) {
+    return res.status(400).json({
+      ok: false,
+      msg: "Faltan datos: usuario y password son requeridos"
+    });
+  }
 
   try {
     let correo = null;
     let matricula = null;
 
+    // Diferenciar por tipo
     if (usuario.includes("@")) correo = usuario;
     else matricula = usuario;
 
-    // verificar existencia real
+    // Buscar sin undefined
     const existe = await User.findOne({
       $or: [
-        { correo },
-        { matricula }
+        correo ? { correo } : {},
+        matricula ? { matricula } : {}
       ]
     });
 
-    if (existe) return res.json({ ok: false, msg: "Usuario ya existe" });
+    if (existe) {
+      return res.status(409).json({ ok: false, msg: "Usuario ya existe" });
+    }
 
     const nuevo = new User({
       correo,
@@ -47,17 +60,27 @@ app.post("/register", async (req, res) => {
     });
 
     await nuevo.save();
-    res.json({ ok: true, rol: nuevo.rol });
+
+    return res.json({ ok: true, rol: nuevo.rol });
 
   } catch (err) {
     console.error("🔥 ERROR REGISTER:", err);
-    res.json({ ok: false, msg: "Error servidor" });
+    return res.status(500).json({ ok: false, msg: "Error servidor" });
   }
 });
 
-// Login
+// ------------------
+//  LOGIN
+// ------------------
 app.post("/login", async (req, res) => {
-  const { usuario, password } = req.body;
+  const { usuario, password } = req.body || {};
+
+  if (!usuario || !password) {
+    return res.status(400).json({
+      ok: false,
+      msg: "Faltan datos"
+    });
+  }
 
   try {
     const query = usuario.includes("@")
@@ -66,15 +89,19 @@ app.post("/login", async (req, res) => {
 
     const user = await User.findOne(query);
 
-    if (!user) return res.json({ ok: false, msg: "Usuario no existe" });
-    if (user.password !== password)
-      return res.json({ ok: false, msg: "Contraseña incorrecta" });
+    if (!user) {
+      return res.status(404).json({ ok: false, msg: "Usuario no existe" });
+    }
 
-    res.json({ ok: true, rol: user.rol });
+    if (user.password !== password) {
+      return res.status(401).json({ ok: false, msg: "Contraseña incorrecta" });
+    }
+
+    return res.json({ ok: true, rol: user.rol });
 
   } catch (err) {
     console.error("🔥 ERROR LOGIN:", err);
-    res.json({ ok: false, msg: "Error servidor" });
+    return res.status(500).json({ ok: false, msg: "Error servidor" });
   }
 });
 
