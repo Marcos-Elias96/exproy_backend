@@ -7,16 +7,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Ruta raíz para evitar error de Railway
+app.get("/", (req, res) => {
+  res.send("Backend funcionando ✔️");
+});
+
 // Conectar MongoDB
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("Conectado a MongoDB Atlas"))
   .catch((err) => console.log("Error Mongo:", err));
-
-// ====== RUTA PARA VERIFICAR QUE EL BACKEND FUNCIONA ======
-app.get("/", (req, res) => {
-  res.send("Backend funcionando ✔️");
-});
 
 // Modelo
 const User = require("./models/User");
